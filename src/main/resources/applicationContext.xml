@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8"?>  
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"  
+    xmlns:p="http://www.springframework.org/schema/p" 
+    xmlns:aop="http://www.springframework.org/schema/aop"
+    xmlns:tx="http://www.springframework.org/schema/tx"
+    xsi:schemaLocation="
+	http://www.springframework.org/schema/aop 
+    http://www.springframework.org/schema/aop/spring-aop.xsd
+	http://www.springframework.org/schema/tx
+    http://www.springframework.org/schema/tx/spring-tx.xsd
+    http://www.springframework.org/schema/beans  http://www.springframework.org/schema/beans/spring-beans-3.0.xsd" >  
+ 
+
+<bean id="transactionManager" class="org.springframework.orm.hibernate5.HibernateTransactionManager">
+    <property name="sessionFactory">
+        <ref bean="mysessionFactory"/>
+    </property>
+</bean>
+
+<tx:annotation-driven transaction-manager="transactionManager"/>
+ 
+<bean id="transactionInterceptor" class="org.springframework.transaction.interceptor.TransactionInterceptor">
+	<property name="transactionManager" ref="transactionManager" />
+	<property name="transactionAttributes">
+		<props>
+			<prop key="save*">PROPAGATION_REQUIRED</prop>
+			<prop key="delete*">PROPAGATION_REQUIRED</prop>
+			<prop key="update*">PROPAGATION_REQUIRED</prop>
+			<prop key="apply*">PROPAGATION_REQUIRED</prop>
+			<prop key="attachDirty*">PROPAGATION_REQUIRED</prop>
+			<prop key="trueGetNext*">PROPAGATION_REQUIRES_NEW</prop>
+			<prop key="find*">PROPAGATION_REQUIRED,readOnly</prop>
+		</props>
+	</property>
+</bean> 
+ <!--  DataSource JNDI	-->
+ 
+<bean id="ds" class = "org.springframework.jdbc.datasource.DriverManagerDataSource">
+	<property name="driverClassName" value ="org.mariadb.jdbc.Driver"></property>
+	<property name="url" value="jdbc:mariadb://localhost:3310/hib"></property>
+	<property name="username" value="root"></property>
+	<property name="password" value="root"></property>
+	
+</bean>
+
+<bean id = "mysessionFactory" class="org.springframework.orm.hibernate5.LocalSessionFactoryBean">
+	<property name = "dataSource" ref="ds"></property>
+	
+	<property name = "mappingResources">
+	<list>
+	<value>employee.hbm.xml</value>
+	</list>
+	</property>
+	<property name="hibernateProperties">
+		<props>
+			<prop key="hibernate.dialect">org.hibernate.dialect.MariaDBDialect</prop>
+			<prop key="hibernate.hbm2ddl.auto">update</prop>
+			<prop key="hibernate.show_sql">true</prop>
+		</props>
+	</property>
+</bean>
+
+<bean id = "hibernatetemplate" class="org.springframework.orm.hibernate5.HibernateTemplate">
+	<property name="sessionFactory" ref = "mysessionFactory"></property>
+	<property name="checkWriteOperations" value="false"/>
+</bean>
+
+<bean id ="d" class = "com.pouchen.dao.EmployeeDao">
+	<property name = "template" ref = "hibernatetemplate"></property>
+</bean>
+
+<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+	<property name="dataSource" ref="ds"></property>
+</bean>
+
+<bean id="sdao" class = "com.pouchen.dao.SpringDao">
+	<property name="jdbcTemplate" ref ="jdbcTemplate"></property>
+</bean>
+
+<!-- Constructor Injection with Dependent Object -->
+ 
+<bean id="studentbean" class="com.pouchen.dto.Students">  
+	<property name="name" value="Roy.Chan"></property>  
+</bean>  
+
+<bean id="addressbean" class = "com.pouchen.dto.Address">
+	<constructor-arg value = "str-DI" type = "String"></constructor-arg>
+</bean>
+
+<bean id = "addr" class = "com.pouchen.dto.Address">
+	<constructor-arg value = "ROY"></constructor-arg>
+	<constructor-arg value = "Changwa"></constructor-arg>
+</bean>
+
+<bean id="emp" class = "com.pouchen.dto.Employee">
+ <constructor-arg>
+ 	<ref bean = "addr"/>
+ </constructor-arg>
+ <constructor-arg value = "Chan" type = "String"></constructor-arg>
+</bean>
+
+<bean id = "questionbean" class="com.pouchen.dto.Question">
+	<constructor-arg value="111"></constructor-arg>
+	<constructor-arg value="What is java?"></constructor-arg>
+	<constructor-arg>
+<list>
+	<value>Java is a programming language</value>
+	<value>Java is a cross-platform</value>
+	<value>Java is a OOP design</value>
+</list>
+</constructor-arg>
+<constructor-arg>
+	<list>
+		<ref bean="ans" />
+		<ref bean="ans1" />
+	</list>
+</constructor-arg>
+<constructor-arg>
+	<map>  
+		<entry key="Java is a Programming Language"  value="Ajay Kumar"></entry>  
+		<entry key="Java is a Platform" value="John Smith"></entry>  
+		<entry key="Java is an Island" value="Raj Kumar"></entry>  
+	</map>  
+</constructor-arg>
+<constructor-arg>
+	<map>
+		<entry key-ref="ans" value-ref="user"></entry>
+		<entry key-ref="ans1" value-ref="user1"></entry>
+	</map>
+</constructor-arg>
+</bean>
+
+<bean id = "ans" class = "com.pouchen.dto.Answer">
+	<constructor-arg value="Roy"></constructor-arg>
+	<constructor-arg value="Chan"></constructor-arg>
+</bean>
+
+<bean id = "ans1" class = "com.pouchen.dto.Answer">
+	<constructor-arg value = "Ravi"></constructor-arg>
+	<constructor-arg value = "Chan"></constructor-arg>
+</bean>
+
+<bean id = "user" class = "com.pouchen.dto.User">
+	<property name = "id" value = "1"></property>
+	<property name = "name" value = "Varun Kumar"></property>
+	<property name = "email" value = "Roy.Chan@gmail.com"></property>
+</bean>
+
+<bean id = "user1" class = "com.pouchen.dto.User">
+	<property name="id" value = "2"></property>
+	<property name="name" value = "Vladmire"></property>
+	<property name="email" value = "Vladmire2@gmail.com"></property>
+</bean>
+
+<!-- Setting Injection with Dependent Object -->
+<bean id = "addrSI" class = "com.pouchen.dto.Address">
+	<property name = "name" value = "Roy-Chan"></property>
+	<property name = "address" value = "Changwa"></property>
+</bean>
+
+<bean id ="empSI" class = "com.pouchen.dto.Employee">
+	<property name ="address" ref = "addrSI"></property>
+	<property name = "name" value = "Roy.Chan"></property>
+</bean>
+
+<bean id = "quesSI" class = "com.pouchen.dto.Question">
+	<property name = "id" value = "1"></property>
+	<property name = "name" value = "Roy"></property>
+	<property name = "answers">
+<list>
+	<value>Java is a programming language</value>
+	<value>Java is a platform</value>
+	<value>Java is a an Island</value>
+</list>
+</property>
+<property name ="ansList">
+	<list>
+		<ref bean = "ans" />
+		<ref bean = "ans1" />
+	</list>
+</property>
+<property name="ansMap">
+	<map>
+		<entry key = "Java is a programming language" value = "Sonoo Jaiswal"></entry>
+		<entry key = "Java is a Platform" value = "Sachin Yadav"></entry>
+	</map>
+</property>
+<property name="ansMap2">
+	<map>
+		<entry key-ref = "ans" value-ref = "user"></entry>
+		<entry key-ref = "ans1" value-ref = "user1"></entry>
+	</map>
+</property>
+</bean>
+
+<bean id ="print2d" class= "com.pouchen.dto.Print2D"></bean>
+<bean id ="print3d" class= "com.pouchen.dto.Print3D" autowire="byType"></bean>
+
+<bean id="obj" class="com.pouchen.aop.Advice"></bean>
+<bean id = "ba" class = "com.pouchen.aop.BeforeAdvisor"></bean>
+<bean id = "aa" class = "com.pouchen.aop.AfterAdvisor"></bean>
+<bean id = "aroundadvisor" class = "com.pouchen.aop.AroundAdvisor"></bean>
+<bean id = "ta" class = "com.pouchen.aop.ThrowsAdvisor"></bean>
+<bean id = "valid" class = "com.pouchen.aop.Validator"></bean>
+
+<bean id ="proxy" class = "org.springframework.aop.framework.ProxyFactoryBean">
+	<property name = "target" ref="obj"></property>
+	<property name = "interceptorNames">
+	<list>
+		<value>ba</value>
+		<value>aa</value>
+		<value>aroundadvisor</value>
+		<value>ta</value>
+	</list>
+	</property>
+</bean>
+<bean id = "opBean" class = "com.pouchen.aop.annota.Operation"></bean>
+<bean id = "trackBean" class = "com.pouchen.aop.annota.TrackOperation"></bean>
+
+<!-- https://docs.spring.io/spring-framework/docs/3.2.0.RC1_to_3.2.0.RC2/Spring%20Framework%203.2.0.RC1/org/springframework/aop/aspectj/annotation/AnnotationAwareAspectJAutoProxyCreator.html-->
+<!-- <bean class = "org.springframework.aop.aspectj.annotation.AnnotationAwareAspectJAutoProxyCreator"></bean>
+-->
+
+<bean id="oBean" class= "com.pouchen.aop.xml.Operation"></bean> 
+<bean id="trackAspect" class="com.pouchen.aop.xml.TrackOperation"></bean> 
+
+<aop:aspectj-autoproxy />
+<aop:config>
+	<aop:aspect id="myaspect" ref="trackAspect">
+	<!-- @Before -->  
+		<aop:pointcut id ="pointCutBefore" expression="execution(* com.pouchen.aop.xml.Operation.*(..))" />
+		<aop:before method="myadvice" pointcut-ref="pointCutBefore" />
+	</aop:aspect>
+</aop:config>
+
+
+</beans>  
